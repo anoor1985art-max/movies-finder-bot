@@ -415,7 +415,8 @@ def send_movie_full_details(chat_id, media_type, item_id, status_msg):
         type_label = "🎬 فيلم سينمائي" if media_type == 'movie' else "📺 مسلسل تلفزيوني"
 
         caption_text = (
-            f"🍿 <b>{title}</b> ({year})\n"
+            f"🍿 <code>{title}</code> ({year})\n"
+            f"<i>(اضغط على الاسم لنسخه)</i>\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 <b>النوع:</b> {type_label}\n"
             f"🌟 <b>التقييم:</b> {rating:.1f}/10 ({votes} صوت)\n"
