@@ -112,7 +112,7 @@ def process_visual_search(message, status_msg):
         # إذا كانت صورة، نستخدم Gemini للبحث عن اسم الفيلم/المسلسل
         if message.photo and GEMINI_API_KEY:
             try:
-                model = genai.GenerativeModel('gemini-1.5-pro')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 img = PIL.Image.open(temp_file)
                 prompt = "هذه صورة من فيلم، مسلسل، أو أنمي. ما هو الاسم الرسمي لهذا العمل باللغة الإنجليزية (أو العربية إذا كان عربياً)؟ أجب فقط باسم العمل دون أي كلمات إضافية."
                 response = model.generate_content([prompt, img])
@@ -226,7 +226,7 @@ def smart_plot_fallback(query):
     """محرك بحث ذكي باستخدام Gemini عندما يكتب المستخدم وصفاً أو اسماً غير دقيق للفيلم"""
     try:
         if GEMINI_API_KEY:
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             prompt = f"أنا أبحث عن فيلم أو مسلسل بناءً على هذا الوصف أو الاسم العام: '{query}'. ما هو الاسم الرسمي الإنجليزي (أو العربي إذا كان عملاً عربياً) لهذا العمل؟ أجب فقط باسم العمل دون أي كلمات إضافية أو مقدمات."
             response = model.generate_content(prompt)
             if response and response.text:
