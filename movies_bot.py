@@ -434,6 +434,12 @@ def send_movie_full_details(chat_id, media_type, item_id, status_msg):
         safe_query = urllib.parse.quote(f"{title} {year}")
 
         markup = types.InlineKeyboardMarkup(row_width=1)
+        
+        # إضافة زر نسخ الاسم
+        markup.add(
+            types.InlineKeyboardButton(f"📋 نسخ اسم الفيلم: {title}", copy_text=types.CopyTextButton(text=title))
+        )
+
         markup.add(
             types.InlineKeyboardButton("🎬 مشاهدة الإعلان الترويجي (Trailer) على YouTube", url=trailer_url),
             types.InlineKeyboardButton("🟡 بحث في شبكتي سينمانا (Cinemana)", url=f"https://cinemana.shabakaty.com/search?query={safe_title}"),
