@@ -361,28 +361,34 @@ def handle_item_details(call):
 def send_movie_full_details(chat_id, media_type, item_id, status_msg):
     try:
         keys_to_try = [TMDB_API_KEY, "15d2ea6d0dc1d476efbca3eba2b9bbfb"]
-        data = {}
+        data_en = {}
+        data_ar = {}
+
+        # جلب البيانات بالإنجليزية للحصول على الاسم الإنجليزي
         for api_k in keys_to_try:
+            if not api_k: continue
+            url_en = f"https://api.themoviedb.org/3/{media_type}/{item_id}?api_key={api_k}&language=en-US&append_to_response=credits,videos"
+            resp_en = requests.get(url_en, timeout=15)
+            if resp_en.status_code == 200:
+                data_en = resp_en.json()
+                break
+
+        # جلب البيانات بالعربية للحصول على القصة
+        for api_k in keys_to_try:
+            if not api_k: continue
             url_ar = f"https://api.themoviedb.org/3/{media_type}/{item_id}?api_key={api_k}&language=ar-SA&append_to_response=credits,videos"
             resp = requests.get(url_ar, timeout=15)
             if resp.status_code == 200:
-                data = resp.json()
+                data_ar = resp.json()
                 break
-
-        # إذا كانت القصة فارغة بالعربية نجلبها بالإنجليزية
-        overview = data.get('overview', '').strip()
-        if not overview:
-            for api_k in keys_to_try:
-                url_en = f"https://api.themoviedb.org/3/{media_type}/{item_id}?api_key={api_k}&language=en-US&append_to_response=credits,videos"
-                resp_en = requests.get(url_en, timeout=15)
-                if resp_en.status_code == 200:
-                    data_en = resp_en.json()
-                    overview = data_en.get('overview', '').strip()
-                    if not data.get('title') and not data.get('name'):
-                        data = data_en
-                    break
-
-        title = data.get('title') or data.get('name') or 'بدون عنوان'
+        
+        # استخدام القصة العربية، وإذا لم تتوفر نستخدم الإنجليزية
+        overview = data_ar.get('overview', '').strip() or data_en.get('overview', '').strip()
+        
+        # الدمج: الاعتماد على الإنجليزية للاسم، والعربية لبقية التفاصيل الممكنة
+        data = data_ar if data_ar else data_en
+        
+        title = data_en.get('title') or data_en.get('name') or data.get('title') or data.get('name') or 'بدون عنوان'
         original_title = data.get('original_title') or data.get('original_name') or ''
         year = (data.get('release_date') or data.get('first_air_date') or 'غير محدد')[:4]
         rating = data.get('vote_average', 0)
