@@ -307,6 +307,16 @@ def process_movie_search(message, status_msg, query):
             bot.edit_message_text(msg, chat_id=chat_id, message_id=status_msg.message_id)
             return
 
+        # تحسين الاختيار: ترتيب النتائج بحيث تكون الأولوية للتطابق التام بالاسم ثم الأكثر شهرة
+        query_lower = query.strip().lower()
+        def get_score(item):
+            t1 = (item.get('title') or item.get('name') or '').lower()
+            t2 = (item.get('original_title') or item.get('original_name') or '').lower()
+            is_exact = 1 if (query_lower == t1 or query_lower == t2) else 0
+            return (is_exact, item.get('popularity', 0.0))
+        
+        results.sort(key=get_score, reverse=True)
+        
         # أخذ النتيجة الأولى مباشرة وعرض تفاصيلها
         best_match = results[0]
         media_type = best_match.get('media_type')
