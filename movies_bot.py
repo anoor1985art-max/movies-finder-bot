@@ -259,8 +259,10 @@ def process_movie_search(message, status_msg, query):
         keys_to_try = [TMDB_API_KEY, "15d2ea6d0dc1d476efbca3eba2b9bbfb"]
         results = []
 
-        # البحث المباشر بالعربية أولاً
+        # البحث المباشر بالعربية
         safe_query = urllib.parse.quote(query)
+        results_dict = {}
+        
         for api_k in keys_to_try:
             if not api_k: continue
             search_url = f"https://api.themoviedb.org/3/search/multi?api_key={api_k}&language=ar-SA&query={safe_query}&include_adult=false"
@@ -269,23 +271,26 @@ def process_movie_search(message, status_msg, query):
                 data = resp.json()
                 for item in data.get('results', []):
                     if item.get('media_type') in ['movie', 'tv']:
-                        results.append(item)
-                if results:
+                        results_dict[item['id']] = item
+                if results_dict:
                     break
 
-        # إذا لم نجد بالعربية، نبحث مباشرة بالإنجليزية
-        if not results:
-            for api_k in keys_to_try:
-                if not api_k: continue
-                search_url_en = f"https://api.themoviedb.org/3/search/multi?api_key={api_k}&language=en-US&query={safe_query}&include_adult=false"
-                resp_en = requests.get(search_url_en, timeout=15)
-                if resp_en.status_code == 200:
-                    data_en = resp_en.json()
-                    for item in data_en.get('results', []):
-                        if item.get('media_type') in ['movie', 'tv']:
-                            results.append(item)
-                    if results:
-                        break
+        # البحث بالإنجليزية لضمان دقة الأسماء
+        for api_k in keys_to_try:
+            if not api_k: continue
+            search_url_en = f"https://api.themoviedb.org/3/search/multi?api_key={api_k}&language=en-US&query={safe_query}&include_adult=false"
+            resp_en = requests.get(search_url_en, timeout=15)
+            if resp_en.status_code == 200:
+                data_en = resp_en.json()
+                for item in data_en.get('results', []):
+                    if item.get('media_type') in ['movie', 'tv']:
+                        if item['id'] not in results_dict:
+                            results_dict[item['id']] = item
+                        else:
+                            results_dict[item['id']]['en_title'] = item.get('title') or item.get('name') or ''
+                break
+
+        results = list(results_dict.values())
 
         # إذا لم نجد بالبحث المباشر، نقوم بتشغيل محرك البحث الذكي للوصف والقصة وربط ويكيبيديا
         if not results:
@@ -312,7 +317,8 @@ def process_movie_search(message, status_msg, query):
         def get_score(item):
             t1 = (item.get('title') or item.get('name') or '').lower()
             t2 = (item.get('original_title') or item.get('original_name') or '').lower()
-            is_exact = 1 if (query_lower == t1 or query_lower == t2) else 0
+            t3 = item.get('en_title', '').lower()
+            is_exact = 1 if (query_lower in [t1, t2, t3]) else 0
             return (is_exact, item.get('popularity', 0.0))
         
         results.sort(key=get_score, reverse=True)
