@@ -307,26 +307,16 @@ def process_movie_search(message, status_msg, query):
             bot.edit_message_text(msg, chat_id=chat_id, message_id=status_msg.message_id)
             return
 
-        # عرض أهم 5 نتائج كأزرار تفاعلية
-        markup = types.InlineKeyboardMarkup(row_width=1)
-        for idx, item in enumerate(results[:5], 1):
-            title = item.get('title') or item.get('name') or 'بدون عنوان'
-            year = (item.get('release_date') or item.get('first_air_date') or '')[:4]
-            m_type = "🎬 فيلم" if item.get('media_type') == 'movie' else "📺 مسلسل"
-            rating = f"⭐ {item.get('vote_average', 0):.1f}"
-            
-            btn_text = f"{idx}. {title} ({year}) | {m_type} {rating}"
-            callback_data = f"show_{item.get('media_type')}_{item.get('id')}"
-            markup.add(types.InlineKeyboardButton(btn_text, callback_data=callback_data))
-
-        bot.edit_message_text(
-            f"🔎 <b>نتائج البحث السينمائي عن:</b> <i>«{query}»</i>\n\n"
-            f"👇 <i>اختر الفيلم أو المسلسل لعرض القصة، التقييم، البوستر الرسمي، ورابط الإعلان:</i>",
-            chat_id=chat_id,
-            message_id=status_msg.message_id,
-            reply_markup=markup
-        )
-        print(f"[SEARCH SUCCESS] Displayed {len(results[:5])} results for '{query}' to {chat_id}")
+        # أخذ النتيجة الأولى مباشرة وعرض تفاصيلها
+        best_match = results[0]
+        media_type = best_match.get('media_type')
+        item_id = best_match.get('id')
+        
+        bot.edit_message_text("⏳ <b>جاري جلب البوستر السينمائي وملخص القصة...</b> 🍿", chat_id=chat_id, message_id=status_msg.message_id)
+        
+        # استدعاء دالة عرض التفاصيل فوراً
+        send_movie_full_details(chat_id, media_type, item_id, status_msg)
+        print(f"[SEARCH SUCCESS] Automatically selected first result for '{query}' to {chat_id}")
 
     except Exception as e:
         print(f"[SEARCH ERROR] Exception for '{query}': {e}")
@@ -423,11 +413,11 @@ def send_movie_full_details(chat_id, media_type, item_id, status_msg):
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
             types.InlineKeyboardButton("🎬 مشاهدة الإعلان الترويجي (Trailer) على YouTube", url=trailer_url),
-            types.InlineKeyboardButton("🟡 مشاهدة عبر شبكتي سينمانا (Cinemana)", url=f"https://cinemana.shabakaty.com/search?query={safe_title}"),
-            types.InlineKeyboardButton("🔵 مشاهدة عبر منصة شاهد (Shahid VIP)", url=f"https://shahid.mbc.net/ar/search?q={safe_title}"),
-            types.InlineKeyboardButton("🖥️ مشاهدة عبر فاصل إعلاني (FaselHD)", url=f"https://www.faselhd.ac/?s={safe_title}"),
-            types.InlineKeyboardButton("🍿 مشاهدة عبر إيجي بست (EgyBest)", url=f"https://egybest.com/explore/?q={safe_title}"),
-            types.InlineKeyboardButton("⚡ بحث عن كل روابط المشاهدة والتحميل المجانية", url=f"https://www.google.com/search?q=مشاهدة+وتحميل+فيلم+مسلسل+{safe_query}+مترجم+مجانا")
+            types.InlineKeyboardButton("🟡 بحث في شبكتي سينمانا (Cinemana)", url=f"https://cinemana.shabakaty.com/search?query={safe_title}"),
+            types.InlineKeyboardButton("🔵 بحث في منصة شاهد (Shahid VIP)", url=f"https://shahid.mbc.net/ar/search?q={safe_title}"),
+            types.InlineKeyboardButton("🖥️ بحث في فاصل إعلاني (FaselHD)", url=f"https://www.faselhd.ac/?s={safe_title}"),
+            types.InlineKeyboardButton("🍿 بحث في إيجي بست (EgyBest)", url=f"https://egybest.com/explore/?q={safe_title}"),
+            types.InlineKeyboardButton("⚡ بحث شامل في جوجل عن روابط مجانية", url=f"https://www.google.com/search?q=مشاهدة+وتحميل+فيلم+مسلسل+{safe_query}+مترجم+مجانا")
         )
 
         if poster_url:
